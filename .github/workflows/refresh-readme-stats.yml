@@ -31,7 +31,8 @@ jobs:
 
               content = readme.read_text(encoding="utf-8")
               stamp = str(int(time.time()))
-              updated = re.sub(r'([?&]v=)\d*', rf'\1{stamp}', content)
+              updated = re.sub(r'([?&]v=)\d+', rf'\1{stamp}', content)
+              updated = re.sub(r'([?&]v=)(?=&|$)', rf'\1{stamp}', updated)
 
               if updated != content:
                   readme.write_text(updated, encoding="utf-8")
