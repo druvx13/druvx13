@@ -32,14 +32,14 @@ jobs:
               content = readme.read_text(encoding="utf-8")
               stamp = str(int(time.time()))
               updated, replacements = re.subn(
-                  r'([?&]v=)(\d+)?(?=&|$)',
+                  r'([?&]v=)(\d+)?(?=[&)]|$)',
                   rf'\1{stamp}',
                   content,
               )
               print(f"Updated version parameters: {replacements}")
 
-              if "v=" not in content:
-                  print("Warning: no version parameters found in README.md")
+              if replacements == 0:
+                  raise RuntimeError("No version parameters were updated in README.md")
 
               if updated != content:
                   readme.write_text(updated, encoding="utf-8")
