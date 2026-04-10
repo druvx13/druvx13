@@ -17,22 +17,32 @@ jobs:
 
       - name: Update README stats version
         run: |
+          set -euo pipefail
           python - <<'PY'
           import re
+          import sys
           import time
           from pathlib import Path
 
-          readme = Path("README.md")
-          content = readme.read_text(encoding="utf-8")
-          stamp = str(int(time.time()))
-          updated = re.sub(r'([?&]v=)\d+', rf'\1{stamp}', content)
+          try:
+              readme = Path("README.md")
+              if not readme.exists():
+                  raise FileNotFoundError("README.md not found in repository root")
 
-          if updated != content:
-              readme.write_text(updated, encoding="utf-8")
+              content = readme.read_text(encoding="utf-8")
+              stamp = str(int(time.time()))
+              updated = re.sub(r'([?&]v=)\d+', rf'\1{stamp}', content)
+
+              if updated != content:
+                  readme.write_text(updated, encoding="utf-8")
+          except Exception as exc:
+              print(f"Failed to update README stats version: {exc}", file=sys.stderr)
+              raise
           PY
 
       - name: Commit and push if changed
         run: |
+          set -euo pipefail
           if git diff --quiet; then
             echo "No changes to commit."
             exit 0
@@ -41,4 +51,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
           git commit -m "chore: refresh README stats cache-buster"
-          git push
+          if ! git push; then
+            echo "Failed to push README refresh commit." >&2
+            exit 1
+          fi
