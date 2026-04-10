@@ -1,0 +1,44 @@
+name: Refresh README stats cache-buster
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update README stats version
+        run: |
+          python - <<'PY'
+          import re
+          import time
+          from pathlib import Path
+
+          readme = Path("README.md")
+          content = readme.read_text(encoding="utf-8")
+          stamp = str(int(time.time()))
+          updated = re.sub(r'([?&]v=)\d+', rf'\1{stamp}', content)
+
+          if updated != content:
+              readme.write_text(updated, encoding="utf-8")
+          PY
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "chore: refresh README stats cache-buster"
+          git push
